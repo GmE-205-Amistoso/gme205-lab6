@@ -1,11 +1,12 @@
 # Laboratory 6: Introductory Spatial Database Modeling
 
 ## Contents
-1. [Required Dependencies](#required-dependencies)
-2. [Verify PostgreSQL Installation](#verify-postgresql-installation)
-3. [Troubleshooting](#troubleshooting)
-4. [Reflections](#reflections)
-5. [Author Information](#-author)
+- [Required Dependencies](#required-dependencies)
+- [Verify PostgreSQL Installation](#verify-postgresql-installation)
+- [Troubleshooting](#troubleshooting)
+- [Persistence Decision Table](#persistence-decision-table)
+- [Reflections](#reflections)
+- [Author Information](#-author)
 
 ## Required Dependencies
 Before starting, make sure that you have installed the following dependencies:
@@ -86,6 +87,27 @@ To exit `psql`:
 ├── .gitignore                      # 
 └── README.md                       # Project overview, setup, and usage instructions
 ```
+
+## Persistence Decision Table
+| Object-model element       | Persist? | Reason |
+|---|---|---|
+| `Parcel.id` | Yes | Primary key for the Parcel table. |
+| `Parcel.geometry` | Yes | Core spatial attribute; needed for intersection/distance queries (PostGIS geometry column). |
+| `Parcel.zone` | Yes | For querying/filtering by zone. Also needed to evaluate AllowedZoneRule against stored data |
+| `Parcel.area_sqm` | Yes | For querying/filtering by area. Needed to evaluate MinimumAreaRule without recomputing from geometry every time. |
+| `Parcel.intersects(other)` | No | A method is behavior; intersection can be recomputed on demand from stored geometry. |
+| `Building.building_id` | Yes | This will be used as the primary key for the Building table. |
+| `Building.floors` | Yes | Persistent domain state describing the building. |
+| `Building.geometry` | Yes | Core spatial state for the building; needed for spatial queries. |
+| `Building → Parcel relationship` | Yes | Defines the relationship between Parcel and Boundary — a building belongs to exactly one parcel, so this relationship will need a key reference (`parcel_id` as a `foreign key` on Building). |
+| `Road.road_id` | Yes | Primary key for the Road table. |
+| `Road.geometry` | Yes | Core spatial attribute; needed for RoadAccessRule distance calculations. |
+| `HazardZone.zone_id` | Yes | Primary key for the HazardZone table. |
+| `HazardZone.geometry` | Yes | Core spatial attribute; needed for spatial overlap checks against Parcel geometry. |
+| `HazardZone.hazard_type` | Yes | For querying/filtering by hazard type. |
+| `HazardZone.severity` | Yes | For querying/filtering by hazard severity. |
+| `AssessmentRule.evaluate(parcel)` | No | Executable rule behavior remains application code in this introductory exercise. |
+
 ## Reflections
 
 ## 👤 Author
