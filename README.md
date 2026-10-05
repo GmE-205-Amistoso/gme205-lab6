@@ -21,13 +21,13 @@ Before starting, make sure that you have installed the following dependencies:
 ```text
 ├── diagrams/                       # Design Documentation
 │   └── lab6_relational_model.png       # ER diagram for the Lab 6 database model
+├── evidence/                       # Contains evidences of SQL commands
+│   └── query_results.md                # Documentation of query results
 ├── sql/                            # SQL commands
-│   ├── 01_schema.sql                   #
-│   ├── 02_seed.sql                     #
-│   └── 03_queries.sql                  #
-├── evidence/                       # 
-│   └── query_results.md                # 
-├── .gitignore                      # 
+│   ├── 01_schema.sql                   # Database schema definition
+│   ├── 02_seed.sql                     # Seed data
+│   └── 03_queries.sql                  # Sample queries
+├── .gitignore                      # Ignored folders/files
 └── README.md                       # Project overview, setup, and usage instructions
 ```
 
@@ -97,7 +97,7 @@ To exit `psql`:
 | `Parcel.parcel_id` | Yes | Identity must survive — used as the primary key for the Parcel table. |
 | `Parcel.land_use` | Yes | Mapped attribute state must survive after the program stops. Can also be considered later on as a separate entity (e.g. `LandUse`) and will be referenced by the `Parcel` table through foreign key.|
 | `Parcel.geom` | Yes | Mapped spatial state must survive after the program stops. |
-| `Parcel.area_sqm` | Yes | Mapped spatial state. Although can be considered as behavior since area can be recalculated from the stored geometry whenever it's needed. |
+| `Parcel.area()` | No | A behavior since area can be recalculated from the stored geometry whenever it's needed. |
 | `Building.building_id` | Yes | Identity must survive — used as the primary key for the Building table. |
 | `Building.floors` | Yes | Persistent domain attribute describing the building. |
 | `Building.geom` | Yes | Persistent spatial state for the building. |
@@ -111,20 +111,21 @@ To exit `psql`:
 ## The Entity-Relationship Diagram
 <img src="diagrams/lab6_relational_model.png" alt="lab5_uml" width="800">
 
-## Creating the Database Schema
+## Running the SQL files
 
 ### Method 1: Using the Terminal
-Run the `01_schema.sql` file from the root directory using the `psql` command-line utility with the `-f` flag.
+Run the SQL files from the root directory using the `psql` command-line utility with the `-f` flag.
 ``` bash
-psql -U your_username -d your_database -f sql/01_schema.sql
+psql -U your_username -d your_database -f sql/sql_file.sql
 ```
 
 ### Method 2: Using the pgAdmin
 1. Open the `query tool` of your specific database.
 2. Click the `Open File` icon (folder symbol) in the toolbar.
-3. Navigate to and select `01_schema.sql` file to load it into the editor.
+3. Navigate to and select the SQL file to load it into the editor.
 4. Click the Execute/Refresh button (or press F5) to run the script.
 
+>***Important Note:*** If running the SQL files for the **first time**, make sure to run the `01_schema.sql` first then the `02_seed.sql` next. Running `03_queries.sql` before the other two files will produce an error as the schema does not exist and/or the tables have not been populated yet. <br><br>If both `01_schema.sql` and `02_seed.sql` have already been executed, no need to run the them again befure the succeeding runs of `03_queries.sql`.
 
 ## Reflections
 
