@@ -89,24 +89,23 @@ To exit `psql`:
 ```
 
 ## Persistence Decision Table
-| Object-model element       | Persist? | Reason |
+> *Note*: The table has been restructured into **one row per attribute** format so that it is easier to map against the ERD.
+
+| Object-model element | Persist? | Reason |
 |---|---|---|
-| `Parcel.id` | Yes | Primary key for the Parcel table. |
-| `Parcel.geometry` | Yes | Core spatial attribute; needed for intersection/distance queries (PostGIS geometry column). |
-| `Parcel.zone` | Yes | For querying/filtering by zone. Also needed to evaluate AllowedZoneRule against stored data |
-| `Parcel.area_sqm` | Yes | For querying/filtering by area. Needed to evaluate MinimumAreaRule without recomputing from geometry every time. |
-| `Parcel.intersects(other)` | No | A method is behavior; intersection can be recomputed on demand from stored geometry. |
-| `Building.building_id` | Yes | This will be used as the primary key for the Building table. |
-| `Building.floors` | Yes | Persistent domain state describing the building. |
-| `Building.geometry` | Yes | Core spatial state for the building; needed for spatial queries. |
-| `Building → Parcel relationship` | Yes | Defines the relationship between Parcel and Boundary — a building belongs to exactly one parcel, so this relationship will need a key reference (`parcel_id` as a `foreign key` on Building). |
-| `Road.road_id` | Yes | Primary key for the Road table. |
-| `Road.geometry` | Yes | Core spatial attribute; needed for RoadAccessRule distance calculations. |
-| `HazardZone.zone_id` | Yes | Primary key for the HazardZone table. |
-| `HazardZone.geometry` | Yes | Core spatial attribute; needed for spatial overlap checks against Parcel geometry. |
-| `HazardZone.hazard_type` | Yes | For querying/filtering by hazard type. |
-| `HazardZone.severity` | Yes | For querying/filtering by hazard severity. |
-| `AssessmentRule.evaluate(parcel)` | No | Executable rule behavior remains application code in this introductory exercise. |
+| `Parcel.id` | Yes | Identity must survive — used as the primary key for the Parcel table. |
+| `Parcel.land_use` | Yes | Mapped attribute state must survive after the program stops. Can also be considered later on as a separate entity (e.g. `LandUse`) and will be referenced by the `Parcel` table through foreign key.|
+| `Parcel.geometry` | Yes | Mapped spatial state must survive after the program stops. |
+| `Parcel.area_sqm` | Yes | Mapped spatial state. Although can be considered as behavior since area can be recalculated from the stored geometry whenever it's needed. |
+| `Building.id` | Yes | Identity must survive — used as the primary key for the Building table. |
+| `Building.floors` | Yes | Persistent domain attribute describing the building. |
+| `Building.geometry` | Yes | Persistent spatial state for the building. |
+| `Building → Parcel relationship` | Yes | This relationship must be retained across restarts, so it requires a stored key reference (`parcel_id` as a foreign key on `Building`). |
+| `Road.id` | Yes | Identity must survive — used as the primary key for the Road table. |
+| `Road.road_class` | Yes | Persistent attribute describing the road's classification. Can also be considered later on as a separate entity (e.g. `RoadClass`) and will be referenced by the `Road` table through foreign key.|
+| `Road.geometry` | Yes | Persistent spatial state for the road. |
+| `SpatialRule.evaluate(parcel)` | No | Rule-checking logic stays as application code; it is behavior, not data to store. |
+| `RuleResult.rulename, passed, message` | Yes | Unlike a rule's logic, the outcome of evaluating a rule against a parcel is a fact worth keeping — it can't be regenerated later without re-running the exact same evaluation against the parcel's state at that point in time, so it must be stored if any history of past assessments is required. |
 
 ## Reflections
 
