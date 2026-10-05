@@ -5,6 +5,7 @@
 - [Verify PostgreSQL Installation](#verify-postgresql-installation)
 - [Troubleshooting](#troubleshooting)
 - [Persistence Decision Table](#persistence-decision-table)
+- [The Entity-Relationship Diagram](#the-entity-relationship-diagram)
 - [Reflections](#reflections)
 - [Author Information](#-author)
 
@@ -15,6 +16,20 @@ Before starting, make sure that you have installed the following dependencies:
 - PostGIS
 - `psql` (included with PostgreSQL) and [pgAdmin 4](https://www.pgadmin.org/)
 - *(Optional)* **[VSCode](https://code.visualstudio.com/)**
+
+## Directory Structure
+```text
+├── diagrams/                       # Design Documentation
+│   └── lab6_relational_model.png       # ER diagram for the Lab 6 database model
+├── sql/                            # SQL commands
+│   ├── 01_schema.sql                   #
+│   ├── 02_seed.sql                     #
+│   └── 03_queries.sql                  #
+├── evidence/                       # 
+│   └── query_results.md                # 
+├── .gitignore                      # 
+└── README.md                       # Project overview, setup, and usage instructions
+```
 
 ## Verify PostgreSQL Installation
 
@@ -74,38 +89,42 @@ To exit `psql`:
 | `extension "..." is not available` | The package isn't installed for your running PostgreSQL version. Check `pg_config --version` against `SHOW server_version;`. |
 | `database "..." does not exist` | The database might not exist. You may run the `psql -l` command to check for existing databases. |
 
-## Directory Structure
-```text
-├── diagrams/                       # Design Documentation
-│   └── lab6_relational_model.png       # ER diagram for the Lab 6 database model
-├── sql/                            # SQL commands
-│   ├── 01_schema.sql                   #
-│   ├── 02_seed.sql                     #
-│   └── 03_queries.sql                  #
-├── evidence/                       # 
-│   └── query_results.md                # 
-├── .gitignore                      # 
-└── README.md                       # Project overview, setup, and usage instructions
-```
-
 ## Persistence Decision Table
 > *Note*: The table has been restructured into **one row per attribute** format so that it is easier to map against the ERD.
 
 | Object-model element | Persist? | Reason |
 |---|---|---|
-| `Parcel.id` | Yes | Identity must survive — used as the primary key for the Parcel table. |
+| `Parcel.parcel_id` | Yes | Identity must survive — used as the primary key for the Parcel table. |
 | `Parcel.land_use` | Yes | Mapped attribute state must survive after the program stops. Can also be considered later on as a separate entity (e.g. `LandUse`) and will be referenced by the `Parcel` table through foreign key.|
-| `Parcel.geometry` | Yes | Mapped spatial state must survive after the program stops. |
+| `Parcel.geom` | Yes | Mapped spatial state must survive after the program stops. |
 | `Parcel.area_sqm` | Yes | Mapped spatial state. Although can be considered as behavior since area can be recalculated from the stored geometry whenever it's needed. |
-| `Building.id` | Yes | Identity must survive — used as the primary key for the Building table. |
+| `Building.building_id` | Yes | Identity must survive — used as the primary key for the Building table. |
 | `Building.floors` | Yes | Persistent domain attribute describing the building. |
-| `Building.geometry` | Yes | Persistent spatial state for the building. |
+| `Building.geom` | Yes | Persistent spatial state for the building. |
 | `Building → Parcel relationship` | Yes | This relationship must be retained across restarts, so it requires a stored key reference (`parcel_id` as a foreign key on `Building`). |
-| `Road.id` | Yes | Identity must survive — used as the primary key for the Road table. |
+| `Road.road_id` | Yes | Identity must survive — used as the primary key for the Road table. |
 | `Road.road_class` | Yes | Persistent attribute describing the road's classification. Can also be considered later on as a separate entity (e.g. `RoadClass`) and will be referenced by the `Road` table through foreign key.|
-| `Road.geometry` | Yes | Persistent spatial state for the road. |
+| `Road.geom` | Yes | Persistent spatial state for the road. |
 | `SpatialRule.evaluate(parcel)` | No | Rule-checking logic stays as application code; it is behavior, not data to store. |
 | `RuleResult.rulename, passed, message` | Yes | Unlike a rule's logic, the outcome of evaluating a rule against a parcel is a fact worth keeping — it can't be regenerated later without re-running the exact same evaluation against the parcel's state at that point in time, so it must be stored if any history of past assessments is required. |
+
+## The Entity-Relationship Diagram
+<img src="diagrams/lab6_relational_model.png" alt="lab5_uml" width="800">
+
+## Creating the Database Schema
+
+### Method 1: Using the Terminal
+Run the `01_schema.sql` file from the root directory using the `psql` command-line utility with the `-f` flag.
+``` bash
+psql -U your_username -d your_database -f sql/01_schema.sql
+```
+
+### Method 2: Using the pgAdmin
+1. Open the `query tool` of your specific database.
+2. Click the `Open File` icon (folder symbol) in the toolbar.
+3. Navigate to and select `01_schema.sql` file to load it into the editor.
+4. Click the Execute/Refresh button (or press F5) to run the script.
+
 
 ## Reflections
 
