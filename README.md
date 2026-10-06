@@ -6,6 +6,7 @@
 - [Troubleshooting](#troubleshooting)
 - [Persistence Decision Table](#persistence-decision-table)
 - [The Entity-Relationship Diagram](#the-entity-relationship-diagram)
+- [Running the SQL Files](#running-the-sql-files)
 - [Reflections](#reflections)
 - [Author Information](#-author)
 
@@ -13,7 +14,7 @@
 Before starting, make sure that you have installed the following dependencies:
 
 - **[PostgreSQL 18](https://www.postgresql.org/download/macosx/)**
-- PostGIS
+- PostGIS extension
 - `psql` (included with PostgreSQL) and [pgAdmin 4](https://www.pgadmin.org/)
 - *(Optional)* **[VSCode](https://code.visualstudio.com/)**
 
@@ -63,18 +64,27 @@ Use the default database `postgres`:
 psql -d postgres
 ```
 Inside `psql`:
+
+Check the name of the current database used.
 ```bash
 SELECT current_database();
 ```
-> This should show the current database name.
+
+Check PostgreSQL version:
 ```bash
 SELECT version();
 ```
-> This should show the current version of PostgreSQL.
+
+Install the PostGIS extension to the current database.
+```bash
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+
+Show full PostGIS version, build configuration, and underlying library information. 
 ```bash
 SELECT postgis_full_version();
 ```
-> This should show a the current version of PostGIS and the installed extensions.
+
 To exit `psql`:
 ```bash
 \q
@@ -89,6 +99,8 @@ To exit `psql`:
 | `extension "..." is not available` | The package isn't installed for your running PostgreSQL version. Check `pg_config --version` against `SHOW server_version;`. |
 | `database "..." does not exist` | The database might not exist. You may run the `psql -l` command to check for existing databases. |
 
+***
+
 ## Persistence Decision Table
 > *Note*: The table has been restructured into **one row per attribute** format so that it is easier to map against the ERD.
 
@@ -98,6 +110,7 @@ To exit `psql`:
 | `Parcel.land_use` | Yes | Mapped attribute state must survive after the program stops. Can also be considered later on as a separate entity (e.g. `LandUse`) and will be referenced by the `Parcel` table through foreign key.|
 | `Parcel.geom` | Yes | Mapped spatial state must survive after the program stops. |
 | `Parcel.area()` | No | A behavior since area can be recalculated from the stored geometry whenever it's needed. |
+| `Parcel.intersects(other)` | No | This method is a behavior and can be computed from the stored geometries of the objects evaluated. |
 | `Building.building_id` | Yes | Identity must survive — used as the primary key for the Building table. |
 | `Building.floors` | Yes | Persistent domain attribute describing the building. |
 | `Building.geom` | Yes | Persistent spatial state for the building. |
@@ -116,8 +129,9 @@ To exit `psql`:
 ### Method 1: Using the Terminal
 Run the SQL files from the root directory using the `psql` command-line utility with the `-f` flag.
 ``` bash
-psql -U your_username -d your_database -f sql/sql_file.sql
+psql -U <your_username> -d <your_database> -f sql/<sql_file>.sql
 ```
+>***Sample usage:*** psql -U juandlc -d postgres -f sql/01_schema.sql
 
 ### Method 2: Using the pgAdmin
 1. Open the `query tool` of your specific database.
@@ -128,6 +142,21 @@ psql -U your_username -d your_database -f sql/sql_file.sql
 >***Important Note:*** If running the SQL files for the **first time**, make sure to run the `01_schema.sql` first then the `02_seed.sql` next. Running `03_queries.sql` before the other two files will produce an error as the schema does not exist and/or the tables have not been populated yet. <br><br>If both `01_schema.sql` and `02_seed.sql` have already been executed, no need to run the them again befure the succeeding runs of `03_queries.sql`.
 
 ## Reflections
+
+### *1. Name one attribute from your object model that became a database column. Why must it persist?*
+One attribute from my object model that became a database column is the `parcel_id`. This attribute must persist because it serves as the `primary key` (the persistent identity) of the records in the `parcels` table. This attribute is also being referenced by other table such as the `buildings` table, ensuring that the `Building → Parcel` relationship would survive even after the program terminates.
+
+### *2. Name one method or behavior that did not become a column. Why not?*
+One method/behavior that did not become a column was the `area()` method. Its result can be calculated on demand from the stored geometry (e.g. using `ST_Area`), so there's no need to persist it directly. That being said, a related design consideration is whether to store a persistent pre-computed value like the `area_sqm` as its own colum. This would allow for quick checks, filtering, or sorting by area without having the additional overhead of computing this every single time, at the cost of needing to keep that stored value in sync if the `geometry` ever changes.
+
+### *3. How did the Building → Parcel object relationship become a relational relationship?*
+The `Building → Parcel` object relationship became a relational relationship by having the Building table reference the Parcel table through the use of a `foreign key (parcel_id)`. Through this, a `one-to-many` cardinality is reflected: each `Building` belongs to **exactly one** `Parcel`, while a `Parcel` may have **zero or many** `Buildings`. A `Building` **cannot exist** without a valid `Parcel` reference (enforced by the `NOT NULL` foreign key constraint), but a `Parcel` **can exist independently** with no Buildings at all.
+
+### *4. Why can Road proximity be discovered spatially instead of storing parcel_id in roads?*
+The `road proximity` can be discovered **spatially** rather than stored as a **foreign key** because a `road` being near a `parcel` doesn't mean that the `road` belongs to or is owned by that `parcel`. Unlike the `Building → Parcel` relationship, there is no structural ownership to record. Instead, `PostGIS` can calculate this relationship on demand using the `ST_DWithin(geom1, geom2, distance)` spatial method which checks whether the two geometries (geom1 and geom2) are within a given distance (dist) with each other. Storing `parcel_id` in `roads` would misrepresent a geometric/spatial relationship as a **fixed relationship**.
+
+### *5. What is one advantage of explicitly storing geometry type and SRID in the schema?*
+One advantage of explicitly storing the `geometry type` (e.g. `Polygon`, `LineString`) is that the database enforces that **only geometries of the correct shape** can be inserted into the table. This would prevent, for example, a line accidentally being stored in a column meant for parcel boundaries. Storing the `SRID` (e.g. 32651) similarly ensures every geometry in that column uses a **known, consistent coordinate reference system,** so spatial calculations like `ST_Area` or `ST_DWithin` produce meaningful, comparable results instead of silently mixing incompatible projections.
 
 ## 👤 Author
 **ALLAN FRITZGERALD N. AMISTOSO** <br>

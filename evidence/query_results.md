@@ -12,8 +12,7 @@ FROM lab6.parcels;
  P-001     | Residential |    10000
 (1 row)
 ```
-**Interpretation:**
->The seed data from the `02_seed.sql` file has been successufully executed. PostGIS has also been verified to work since the `ST_Area(geometry)` spatial function has returned a valid result.
+>***Interpretation:*** <br><br> The seed data from the `02_seed.sql` file has been successufully executed. PostGIS has also been verified to work since the `ST_Area(geometry)` spatial function has returned a valid result.
 
 ### Query 2: Second Verification — Object Relationship → Foreign Key
 ```bash
@@ -32,8 +31,7 @@ ON p.parcel_id = b.parcel_id;
  B-001       |      2 | P-001     | Residential
 (1 row)
 ```
-**Interpretation:**
->The `JOIN` reconstructs the `Building -> Parcel` relationship by using the persistent `parcel_id` key stored in both tables to associate each **building** with a specific **parcel** it belongs to.
+>***Interpretation:*** <br><br> The `JOIN` reconstructs the `Building -> Parcel` relationship by using the persistent `parcel_id` key stored in both tables to associate each **building** with a specific **parcel** it belongs to.
 
 ### Query 3: Topological check
 ```bash
@@ -51,8 +49,7 @@ ON p.parcel_id = b.parcel_id;
  B-001       | P-001     | t
 (1 row)
 ```
-**Interpretation:**
->The spatial relationship of building `B-001` and parcel `P-001` has been correctly identified by the spatial function `ST_Within`. The query first uses the shared `parcel_id` to identify the corresponding parcel, then determines whether the building's geometry is within the geometry of that parcel.
+>***Interpretation:*** <br><br> The spatial relationship of building `B-001` and parcel `P-001` has been correctly identified by the spatial function `ST_Within`. The query first uses the shared `parcel_id` to identify the corresponding parcel, then determines whether the building's geometry is within the geometry of that parcel.
 
 ### Query 4: Spatial Relationship
 ```bash
@@ -69,5 +66,4 @@ CROSS JOIN lab6.roads AS r;
  P-001     | R-001   | t
 (1 row)
 ```
-**Interpretation:**
->The spatial relationship of parcel `P-001` and road `R-001` has been correctly identified by the spatial function `ST_DWithin`. Unlike the previous query, this relationship was determined based solely on the geometries of the two features, without requiring an explicit relational key between the tables.
+>***Interpretation:*** <br><br> The spatial relationship of parcel `P-001` and road `R-001` has been correctly identified by the spatial function `ST_DWithin`. Unlike the previous query, this relationship was determined based solely on the geometries of the two features, without requiring an explicit relational key between the tables.
